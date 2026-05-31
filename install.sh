@@ -23,7 +23,7 @@ select_language() {
         MSG[updating]="[1/7] Обновление системы..."
         MSG[enabling_bbr]="[2/7] Включение стандартного BBR..."
         MSG[installing_bbr3]="Установка BBR3..."
-        MSG[disabling_ipv6]="Отключение IPv6..."
+        MSG[disabling_ipv6]="Отключение IPv6 (без перезагрузки)..."
         MSG[installing_docker]="[3/7] Установка Docker..."
         MSG[conf_node]="[4/7] Настройка Remnawave Node..."
         MSG[conf_selfsteal]="[5/7] Настройка SelfSteal (Caddy)..."
@@ -43,7 +43,7 @@ select_language() {
         MSG[updating]="[1/7] Updating system packages..."
         MSG[enabling_bbr]="[2/7] Enabling standard BBR..."
         MSG[installing_bbr3]="Installing BBR3..."
-        MSG[disabling_ipv6]="Disabling IPv6..."
+        MSG[disabling_ipv6]="Disabling IPv6 (without reboot)..."
         MSG[installing_docker]="[3/7] Installing Docker..."
         MSG[conf_node]="[4/7] Configuring Remnawave Node..."
         MSG[conf_selfsteal]="[5/7] Configuring SelfSteal (Caddy)..."
@@ -99,10 +99,19 @@ if [[ "$WANT_BBR3" =~ ^[YyДд]$ ]]; then
     bash <(curl -sSL https://raw.githubusercontent.com/ivan-nginx/bbr3/main/optimize_network.sh)
 fi
 
-# Опционально: Отключение IPv6
+# Опционально: Отключение IPv6 (Чистый метод без сторонних скриптов и перезагрузок)
 if [[ "$WANT_IPV6" =~ ^[YyДд]$ ]]; then
     echo "${MSG[disabling_ipv6]}"
-    curl -fsSL LinuxTools.World/IPv6_Toggle.sh | bash
+    
+    # Записываем конфигурацию для сохранения после перезагрузки
+    cat <<EOF >> /etc/sysctl.conf
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+EOF
+
+    # Применяем изменения прямо сейчас
+    sysctl -p
 fi
 
 # 3. Установка Docker
