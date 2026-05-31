@@ -16,4 +16,5 @@
 Просто скопируй и вставь эту команду в терминал твоего сервера:
 
 ```bash
-bash <(curl -fsSL [https://raw.githubusercontent.com/ImFraGushka/Remnawave-Node-installation-script/main/install.sh](https://raw.githubusercontent.com/ТВОЙ_НИК/НАЗВАНИЕ_РЕПО/main/install.sh))
+bash <(curl -fsSL https://raw.githubusercontent.com/ImFraGushka/Remnawave-Node-installation-script/main/install.sh)
+
