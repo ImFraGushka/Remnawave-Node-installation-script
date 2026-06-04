@@ -13,7 +13,7 @@ select_language() {
     
     if [ "$LANG_CHOICE" == "2" ]; then
         MSG[welcome]="=== Установка Remnawave Node ==="
-        MSG[ask_node_port]="Введите внутренний порт ноды [по умолчанию: 8080]: "
+        MSG[ask_node_port]="Введите внутренний порт ноды [по умолчанию: 2222]: "
         MSG[ask_secret]="Введите секретный ключ ноды (Secret Key): "
         MSG[ask_bbr3]="Хотите установить BBR3? (y/n): "
         MSG[ask_ipv6]="Хотите отключить IPv6? (y/n): "
@@ -24,7 +24,8 @@ select_language() {
         MSG[enabling_bbr]="[2/7] Включение стандартного BBR..."
         MSG[installing_bbr3]="Установка BBR3..."
         MSG[disabling_ipv6]="Отключение IPv6 (без перезагрузки)..."
-        MSG[installing_docker]="[3/7] Установка Docker..."
+        MSG[installing_docker]="[3/7] Проверка и установка Docker..."
+        MSG[docker_exists]="Docker уже установлен, пропускаем этот шаг."
         MSG[conf_node]="[4/7] Настройка Remnawave Node..."
         MSG[conf_selfsteal]="[5/7] Настройка SelfSteal (Caddy)..."
         MSG[conf_html]="[6/7] Создание заглушки index.html..."
@@ -33,7 +34,7 @@ select_language() {
         MSG[err_empty]="Ошибка: Поле не может быть пустым."
     else
         MSG[welcome]="=== Remnawave Node Installation ==="
-        MSG[ask_node_port]="Enter internal node port [default: 8080]: "
+        MSG[ask_node_port]="Enter internal node port [default: 2222]: "
         MSG[ask_secret]="Enter node Secret Key: "
         MSG[ask_bbr3]="Do you want to install BBR3? (y/n): "
         MSG[ask_ipv6]="Do you want to disable IPv6? (y/n): "
@@ -44,7 +45,8 @@ select_language() {
         MSG[enabling_bbr]="[2/7] Enabling standard BBR..."
         MSG[installing_bbr3]="Installing BBR3..."
         MSG[disabling_ipv6]="Disabling IPv6 (without reboot)..."
-        MSG[installing_docker]="[3/7] Installing Docker..."
+        MSG[installing_docker]="[3/7] Checking and installing Docker..."
+        MSG[docker_exists]="Docker is already installed, skipping this step."
         MSG[conf_node]="[4/7] Configuring Remnawave Node..."
         MSG[conf_selfsteal]="[5/7] Configuring SelfSteal (Caddy)..."
         MSG[conf_html]="[6/7] Creating index.html template..."
@@ -61,7 +63,7 @@ echo "============================================="
 
 # --- Сбор обязательных данных для Ноды ---
 read -p "${MSG[ask_node_port]}" NODE_PORT
-NODE_PORT=${NODE_PORT:-8080}
+NODE_PORT=${NODE_PORT:-2222}
 
 read -p "${MSG[ask_secret]}" SECRET_KEY
 if [ -z "$SECRET_KEY" ]; then echo "${MSG[err_empty]}"; exit 1; fi
@@ -99,24 +101,24 @@ if [[ "$WANT_BBR3" =~ ^[YyДд]$ ]]; then
     bash <(curl -sSL https://raw.githubusercontent.com/ivan-nginx/bbr3/main/optimize_network.sh)
 fi
 
-# Опционально: Отключение IPv6 (Чистый метод без сторонних скриптов и перезагрузок)
+# Опционально: Отключение IPv6
 if [[ "$WANT_IPV6" =~ ^[YyДд]$ ]]; then
     echo "${MSG[disabling_ipv6]}"
-    
-    # Записываем конфигурацию для сохранения после перезагрузки
     cat <<EOF >> /etc/sysctl.conf
 net.ipv6.conf.all.disable_ipv6 = 1
 net.ipv6.conf.default.disable_ipv6 = 1
 net.ipv6.conf.lo.disable_ipv6 = 1
 EOF
-
-    # Применяем изменения прямо сейчас
     sysctl -p
 fi
 
-# 3. Установка Docker
+# 3. Проверка и установка Docker
 echo "${MSG[installing_docker]}"
-sudo curl -fsSL https://get.docker.com | sh
+if command -v docker &> /dev/null; then
+    echo "${MSG[docker_exists]}"
+else
+    sudo curl -fsSL https://get.docker.com | sh
+fi
 
 # 4. Настройка Remnawave Node
 echo "${MSG[conf_node]}"
