@@ -23,13 +23,13 @@ select_language() {
         MSG[updating]="[1/7] Обновление системы..."
         MSG[enabling_bbr]="[2/7] Включение стандартного BBR..."
         MSG[installing_bbr3]="Установка BBR3..."
-        MSG[disabling_ipv6]="Отключение IPv6 (без перезагрузки)..."
         MSG[installing_docker]="[3/7] Проверка и установка Docker..."
         MSG[docker_exists]="Docker уже установлен, пропускаем этот шаг."
         MSG[conf_node]="[4/7] Настройка Remnawave Node..."
         MSG[conf_selfsteal]="[5/7] Настройка SelfSteal (Caddy)..."
         MSG[conf_html]="[6/7] Создание заглушки index.html..."
         MSG[running_containers]="[7/7] Запуск контейнеров..."
+        MSG[disabling_ipv6]="[Финал] Отключение IPv6..."
         MSG[success]="Установка успешно завершена!"
         MSG[err_empty]="Ошибка: Поле не может быть пустым."
     else
@@ -44,13 +44,13 @@ select_language() {
         MSG[updating]="[1/7] Updating system packages..."
         MSG[enabling_bbr]="[2/7] Enabling standard BBR..."
         MSG[installing_bbr3]="Installing BBR3..."
-        MSG[disabling_ipv6]="Disabling IPv6 (without reboot)..."
         MSG[installing_docker]="[3/7] Checking and installing Docker..."
         MSG[docker_exists]="Docker is already installed, skipping this step."
         MSG[conf_node]="[4/7] Configuring Remnawave Node..."
         MSG[conf_selfsteal]="[5/7] Configuring SelfSteal (Caddy)..."
         MSG[conf_html]="[6/7] Creating index.html template..."
         MSG[running_containers]="[7/7] Starting containers..."
+        MSG[disabling_ipv6]="[Final] Disabling IPv6..."
         MSG[success]="Installation completed successfully!"
         MSG[err_empty]="Error: Field cannot be empty."
     fi
@@ -99,17 +99,6 @@ sysctl -p
 if [[ "$WANT_BBR3" =~ ^[YyДд]$ ]]; then
     echo "${MSG[installing_bbr3]}"
     bash <(curl -sSL https://raw.githubusercontent.com/ivan-nginx/bbr3/main/optimize_network.sh)
-fi
-
-# Опционально: Отключение IPv6
-if [[ "$WANT_IPV6" =~ ^[YyДд]$ ]]; then
-    echo "${MSG[disabling_ipv6]}"
-    cat <<EOF >> /etc/sysctl.conf
-net.ipv6.conf.all.disable_ipv6 = 1
-net.ipv6.conf.default.disable_ipv6 = 1
-net.ipv6.conf.lo.disable_ipv6 = 1
-EOF
-    sysctl -p
 fi
 
 # 3. Проверка и установка Docker
@@ -235,6 +224,17 @@ EOF
     echo "${MSG[running_containers]}"
     cd /opt/selfsteel
     docker compose up -d
+fi
+
+# [Последняя очередь] Опционально: Отключение IPv6
+if [[ "$WANT_IPV6" =~ ^[YyДд]$ ]]; then
+    echo "${MSG[disabling_ipv6]}"
+    cat <<EOF >> /etc/sysctl.conf
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+EOF
+    sysctl -p
 fi
 
 echo "============================================="
